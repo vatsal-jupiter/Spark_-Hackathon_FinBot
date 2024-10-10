@@ -162,9 +162,18 @@ coarsegrain_category = ['food & drinks', 'pots', 'transfers', 'groceries', 'rent
                         'atm', 'credit', 'uncategorised',
                         'bills & utilities', 'charity', 'shopping', 'medical', 'credit bills', 'entertainment',
                         'travel', 'commute', 'personal care',
-                        'investments', 'self transfers', 'fuel', 'refund', 'home services', 'family & pets',
+                        'investments', 'fuel', 'refund', 'home services', 'family & pets',
+                        'money transfers', 'edge card bill', 'investments',
+                        'interest', 'household', 'loans', 'rewards']
+'''spends_coarsegrain_category = ['food & drinks', 'transfers', 'groceries', 'rent', 'miscellaneous', 'pots withdrawal',
+                        'atm', 'credit', 'uncategorised',
+                        'bills & utilities', 'charity', 'shopping', 'medical', 'credit bills', 'entertainment',
+                        'travel', 'commute', 'personal care',
+                        'fuel', 'refund', 'home services', 'family & pets',
                         'money transfers', 'edge card bill',
                         'interest', 'household', 'loans', 'rewards']
+investment_coarsegrain_category = []'''
+
 
 # In[13]:
 
@@ -470,7 +479,12 @@ def get_txn_data_tool(filters: TransactionData):
     """
     Get the transaction data for user with the provided filters
     """
-
+    if "DEBIT" in filters.credit_debit_indicator:
+        if len(filters.coarse_grain_category) <= 2 and "investment" in filters.coarse_grain_category:
+            pass
+        else:
+            filters.coarse_grain_category.remove("investment")
+            filters.coarse_grain_category.remove("pots")
     df = pd.DataFrame(get_transactions('4f7bffe5-7607-4ccb-96b2-bae3372a9d4f', {
         'startDate': '2024-10-01',
         'endDate': '2024-10-30',
