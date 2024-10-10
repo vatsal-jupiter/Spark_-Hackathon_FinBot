@@ -947,7 +947,7 @@ You are a supervisor tasked with managing a conversation between the
 following workers:  {members}. Given the following user request,
 respond with the worker to act next.
 
-Use analyse_upcoming_transaction_data when question asks for upcoming transactions etc. 
+Use analyse_upcoming_transaction_data when the question asks for upcoming transactions, future transactions, or transactions that are expected to occur in the future 
 Use monthly_recap agent when question asks for Oct month summary/overview etc. If it's any other month then Current month/Oct then don't return this flow & move on to next
 Use transaction_data_analyst agent when question needs an analysis on user's past transaction data
 Use Research agent when questions require seearching a web to get generic financial information 
