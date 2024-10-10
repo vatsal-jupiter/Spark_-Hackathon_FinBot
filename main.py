@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request, Query
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from typing import Annotated
-from db.user_dao import get_user_history, get_user_sessions, register_message
+from db.user_dao import get_user_history, get_user_sessions_with_limit, register_message
 
 app = FastAPI()
 
@@ -79,20 +79,22 @@ class ChatPreviewResponse(BaseModel):
 
 
 @app.get("/chats", response_model=ChatPreviewResponse)
-async def get_chat_preview(customer_id: Annotated[str | None, Header()] = None):
+async def get_chat_preview(preview_size: int = 2, customer_id: Annotated[str | None, Header()] = None):
     try:
         if not customer_id or customer_id == '':
             raise HTTPException(status_code=400, detail="Invalid customer ID")
 
-        chat_sessions = get_user_sessions(customer_id)
+        chat_sessions = get_user_sessions_with_limit(customer_id, preview_size)
+
         if not chat_sessions:
             return {"customer_id": customer_id, "chat_history": []}
-        print(chat_sessions)
+
+
         chat_history = [
             ChatHistoryModel(
                 session_id=session[0],
                 user_id=session[1],
-                created_at= session[2].strftime("%Y-%m-%d %H:%M:%S") if session[2] else datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                created_at=session[2].strftime("%Y-%m-%d %H:%M:%S") if session[2] else datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 last_message=session[4] if session[4] else '',
                 title=session[5],
             )

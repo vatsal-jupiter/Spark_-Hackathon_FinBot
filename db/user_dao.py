@@ -15,6 +15,16 @@ def get_user_sessions(user_id):
     cursor.close()
     return response
 
+def get_user_sessions_with_limit(user_id, limit):
+    query = f"SELECT * FROM user_chat_sessions WHERE user_id='{user_id}' ORDER BY start_time desc LIMIT {limit};"
+    conn, cursor = execute_query(query)
+    if cursor is None:
+        logging.error("Failed to execute query")
+        raise ValueError("Failed to execute query")
+    response = cursor.fetchall()
+    cursor.close()
+    return response
+
 def get_user_history(user_id, session_id, timestamp_start, timestamp_end):
     query = f"SELECT * FROM user_chat_messages WHERE user_id='{user_id}' AND session_id='{session_id}'"
     if timestamp_start:
