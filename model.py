@@ -901,10 +901,13 @@ jupiter_info_node = functools.partial(agent_node, agent=jupiter_info_agent, name
 
 # In[43]:
 def get_monthly_recap(state):
-    return {"messages": [AIMessage(content="https://app.jupiter.money/money-recap")]}
+    return {"messages": [AIMessage(content="You can access your Money Recap using the following link:\n\n- [Money Recap Dashboard for September](https://app.jupiter.money/money-recap)")]}
+
+def not_supported_question(state):
+    return {"messages": [AIMessage(content="This is a financial bot. This query doesn't seems to be related to financial information hence can't help with this.")]}
 
 # members = ["transaction_data_analyst" , "Researcher", "Coder"]
-members = ["analyse_upcoming_transaction_data", "monthly_recap", "transaction_data_analyst", "Researcher", "jupiter_info"]
+members = ["analyse_upcoming_transaction_data", "not_supported", "monthly_recap", "transaction_data_analyst", "Researcher", "jupiter_info"]
 options = ["FINISH"] + members
 
 # In[44]:
@@ -945,12 +948,12 @@ following workers:  {members}. Given the following user request,
 respond with the worker to act next.
 
 Use analyse_upcoming_transaction_data when question asks for upcoming transactions etc. 
-
 Use monthly_recap agent when question asks for Oct month summary/overview etc. If it's any other month then Current month/Oct then don't return this flow & move on to next
 Use transaction_data_analyst agent when question needs an analysis on user's past transaction data
-Use Research agent when questions require seearching a web to get finacial information and any general purpose query
+Use Research agent when questions require seearching a web to get generic financial information 
 Use jupiter_info when question require access to user's personal and account details or need an information about 
 jupiter's (1-app for everythinh money) product.
+Use not_supported agent when question is not related to financial data/query be it generic information or user specific information
 
 
 Each worker will perform a task and respond with their results and status.
@@ -1081,10 +1084,12 @@ workflow = StateGraph(AgentState)
 workflow.add_node("supervisor", supervisor_chain)
 
 workflow.add_node("filter_generator", txn_data_fetcher.respond)
+workflow.add_node("fetch_data", invoke_get_txn_data_tool)
 workflow.add_node("analyse_upcoming_transaction_data", get_upcoming_txn_data_tool)
 workflow.add_node("analyse_transaction_data", analyse_transaction_data)
 workflow.add_node("ask_human", human_in_loop)
 workflow.add_node("monthly_recap", get_monthly_recap)
+workflow.add_node("not_supported", not_supported_question)
 
 workflow.add_node("Researcher", research_node)
 workflow.add_node("jupiter_info", jupiter_info_node)
@@ -1109,6 +1114,7 @@ workflow.add_edge("Researcher", "supervisor")
 workflow.add_edge("jupiter_info", "supervisor")
 workflow.add_edge("analyse_transaction_data", "supervisor")
 workflow.add_edge("monthly_recap", END)
+workflow.add_edge("not_supported", END)
 workflow.add_edge("analyse_upcoming_transaction_data", END)
 
 # import sqlite3
