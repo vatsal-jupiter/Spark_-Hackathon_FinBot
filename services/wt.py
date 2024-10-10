@@ -32,11 +32,12 @@ def get_transactions(user_id: str, filters: dict):
     while data["pagination"]["totalRecords"] > len(transactions):
         print(data["pagination"])
         page_number+=1
-        url = f"http://localhost:11000/wealth/v1/transactions?pageNumber={page_number}"
+        url = f"{WT_URL}/wealth/v1/transactions?pageNumber={page_number}"
         response = requests.request("POST", url, headers=headers, data=json.dumps(wt_filters))
         data = response.json()
         transactions.extend(data["transactions"])
 
+    # print('transactions', transactions)
     return transactions
 
 

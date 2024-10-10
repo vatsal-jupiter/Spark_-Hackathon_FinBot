@@ -1,9 +1,11 @@
 from fastapi import FastAPI, Header, HTTPException, Request, Query
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from typing import Annotated
 from db.user_dao import get_user_history, get_user_sessions_with_limit, register_message
+from model import graph
 
 app = FastAPI()
 
@@ -57,12 +59,15 @@ async def query(request: Request, session_id: str, customer_id: str = Header(Non
 
     # get response
 
-    response = "hi. how are you?"
+    response = graph.invoke(
+        {"messages": HumanMessage(content=query_text)},
+        stream_mode="values"
+    )
 
     register_message(customer_id, session_id, response, type='response') # saved response in db
 
     # Simulated response, replace with actual query processing logic
-    return {"customer_id": customer_id, "response": f"Response for query: {query_text}"}
+    return {"customer_id": customer_id, "response": response["messages"][-1].content}
 
 
 class ChatHistoryModel(BaseModel):

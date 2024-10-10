@@ -6,3 +6,11 @@ psycopg2
 psycopg2-binary
 uvicorn
 python-dotenv
+
+langchain
+ipython
+langchain-openai
+langgraph
+langchain_experimental
+openai
+tabulate
