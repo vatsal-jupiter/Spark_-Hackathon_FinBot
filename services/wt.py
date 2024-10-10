@@ -7,6 +7,10 @@ from collections import defaultdict
 load_dotenv()
 SHARED_SECRET = os.getenv('SHARED_SECRET')
 WT_URL = os.getenv('WT_URL')
+fields_to_extract = ['accountType', 'product', 'status', 'displayName', 'balance', 'nextAccountRefreshIn', 'accountRefreshFailedAt']
+fields_naming_map = {
+    'nextAccountRefreshIn': 'nextAccountRefreshInHours'
+}
 # print(WT_URL)
 
 def to_wt_filters(filters):
@@ -86,22 +90,34 @@ def get_insights_aggregates(user_id, filters: dict):
     return response.json()
 
 
-def get_accounts_summary(user_id, products: list):
+def get_accounts_summary(user_id, products=None):
+    if products is None:
+        products = ['JUPITER', 'ADA']
     url = f"{WT_URL}/wealth/v1/user-accounts/summary"
 
     payload = {
-        "accountTypes": products,
+        "accountTypes": products
     }
     headers = {
         'Content-Type': 'application/json',
         'X-App-Version': '3.10.0',
         'x-user-id': user_id,
-        'x-jupiter-forwarded-shared-secret': SHARED_SECRET,
+        'x-jupiter-forwarded-shared-secret': SHARED_SECRET
     }
-    print(payload)
+
     response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
-    print(response.content)
-    return response.json()
+    data = response.json()
+    accounts = data['accounts']
+    modified_data = [{ field: item[field] for field in fields_to_extract } for item in accounts]
+    for account in modified_data:
+        for key in list(account):
+            if key in fields_naming_map:
+                value = account[key]
+                new_field = fields_naming_map[key]
+                account[new_field] = value
+    # print(modified_data)
+    return modified_data
+
 
 # print(get_transactions('5ed1417f-bc66-4aeb-8a60-c7564e4964f9', {
 #     'startDate': '2024-10-01',

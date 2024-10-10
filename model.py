@@ -7,9 +7,11 @@
 import pandas as pd
 from dotenv import load_dotenv
 import os
+from langgraph.prebuilt import InjectedState
+from typing_extensions import Annotated
 
 from services.mcs import get_upcoming_transactions
-from services.wt import get_transactions
+from services.wt import get_transactions, get_accounts_summary
 
 # In[2]:
 
@@ -116,7 +118,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 
 
-def create_agent(chat_model: ChatOpenAI, tools: list, system_prompt: str):
+def create_agent(chat_model: ChatOpenAI, tools: list, system_prompt: str, input_variables = []):
     prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -127,6 +129,9 @@ def create_agent(chat_model: ChatOpenAI, tools: list, system_prompt: str):
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
+
+    prompt.input_variables += input_variables
+
     agent = create_openai_tools_agent(chat_model, tools, prompt)
     executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
     return executor
@@ -138,7 +143,7 @@ def create_agent(chat_model: ChatOpenAI, tools: list, system_prompt: str):
 # Converting to executable node
 def agent_node(state, agent, name):
     # result = agent.invoke(state)
-    result = agent.invoke({"messages": state["messages"]})
+    result = agent.invoke({"messages": state["messages"], 'user_id': state['user_id']})
     return {"messages": [AIMessage(content=result["output"], name=name)]}
 
 
@@ -836,34 +841,12 @@ from langchain.tools import tool
 
 
 @tool("account-deatils-tool")
-def get_account_details():
+def get_account_details(user_id: str):
     """
     Get the personal information and account information of the user.
     """
-    account_details = [{
-        "Name": "Vatsal Patel",
-        "Gender": "Male",
-        "IFSC Code": "FDRL0007777",
-        "Account Number": "77770120692039",
-        "Account Type": "Salary",
-        "Current Balance": "2342343.455"
-    },
-        {
-            "Name": "Vatsal Patel",
-            "Gender": "Male",
-            "IFSC Code": "ICICI0007777",
-            "Account Number": "01470120692039",
-            "Account Type": "Saving",
-            "Current Balance": "35435345.64"
-        },
-        {
-            "Name": "Vatsal Patel",
-            "Gender": "Male",
-            "IFSC Code": "HDFC0007777",
-            "Account Number": "02470120692039",
-            "Account Type": "Saving",
-            "Current Balance": "354668657.7543"
-        }]
+
+    account_details = get_accounts_summary(user_id)
 
     # Return the result as a JSON object
     return json.dumps(account_details)
@@ -875,14 +858,15 @@ def get_account_details():
 system_prompt = """
 You have an access if user's personal and account information. also, you have an information about 
 products of juiter (1-app for everything money)
-You will get an access to user's personal and account information through account-deatils-tool
+You will get an access to user's personal and account information through account-deatils-tool.
+Call the tool with the given user id: {user_id}
 """
 
 # In[41]:
 
 
 tools = [get_account_details]
-jupiter_info_agent = create_agent(chat_model, tools, system_prompt)
+jupiter_info_agent = create_agent(chat_model, tools, system_prompt, ['user_id'])
 
 # In[42]:
 
