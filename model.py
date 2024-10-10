@@ -492,18 +492,20 @@ def get_txn_data_tool(filters: TransactionData, user_id: str):
     # Return the result as a JSON object
     return df
 
-@tool
-def get_upcoming_txn_data_tool(user_id: str):
+
+def get_upcoming_txn_data_tool(state):
     """
     Get the upcoming transaction data for user with the provided filters
     """
     # hardcoding the filters for upcoming transactions
+    user_id = state["user_id"]
     filters = TransactionData()
     df = pd.DataFrame(get_upcoming_transactions(user_id, filters.__dict__))
     # print('user-transactions', df.to_dict())
     df = data_preprocessing(df)
     # Return the result as a JSON object
-    return df
+
+    return {"dataframe_store": [df]}
 
 # In[23]:
 
@@ -512,8 +514,6 @@ from langgraph.prebuilt.tool_executor import ToolExecutor
 
 tools = [get_txn_data_tool]
 tool_executor = ToolExecutor(tools)
-toolsUpcomingTxnData = [get_upcoming_txn_data_tool]
-tool_executor = ToolExecutor(toolsUpcomingTxnData)
 
 # In[24]:
 
@@ -563,24 +563,6 @@ def invoke_get_txn_data_tool(state):
         print(args)
         dataframe_description = description_generator.invoke({"tool_argumnts": args})
         action = ToolInvocation(tool=function_name, tool_input={'filters': json.loads(args), 'user_id': state['user_id']})
-        response = tool_executor.invoke(action)
-        dataframe_update = {
-            "dataframe": response,
-            "description": dataframe_description
-        }
-        df_list.append(dataframe_update)
-    return {"dataframe_store": df_list, "intermediate_steps": [AIMessage(content=args)]}
-
-def invoke_get_upcoming_txn_data_tool(state):
-    tool_calls = state['intermediate_steps'][-1].additional_kwargs.get("tool_calls", [])
-    df_list = []
-    for tool_call in tool_calls:
-        tool_details = tool_call
-        function_name = get_upcoming_txn_data_tool.name
-        args = tool_details.get("function").get("arguments")
-        print(args)
-        dataframe_description = description_generator.invoke({"tool_argumnts": args})
-        action = ToolInvocation(tool=function_name, tool_input={'user_id': state['user_id']})
         response = tool_executor.invoke(action)
         dataframe_update = {
             "dataframe": response,
@@ -693,87 +675,6 @@ from langchain_core.messages import AIMessage
 
 
 def analyse_transaction_data(state):
-    dataframe_dict = {}
-    dataframe_description = ""
-    for i in range(len(state["dataframe_store"])):
-        data = state["dataframe_store"][i]
-        dataframe_dict["df_" + str(i + 1)] = data["dataframe"]
-        prompt = f""" 
-
-        data in df_{i + 1} describes as follows:
-        {data["description"]}
-
-        """
-        dataframe_description = dataframe_description + prompt
-
-    analyse_data_system_prompt = """
-    You have access to a pandas dataframes. Below is the head of the dataframes in markdown format:
-    {markdown}
-
-    below are the set of columns availables:
-    {columns}
-
-    Description about data of each dataframe availabe:
-    {dataframe_description}
-
-    Given a user question, write the Python code to answer it. \
-    Return ONLY the valid Python code and nothing else. \
-    Don't assume you have access to any libraries other than built-in Python ones and pandas.
-    write down a python code in such way that it will print final answer with proper description about what you are printing.
-    use only one print statement and print all the final answer with with proper description.
-    """
-
-    df = state["dataframe_store"][0]["dataframe"]
-    df_head = str(df.head().to_markdown())
-    df_columns = str(df.columns.tolist())
-
-    code_tool = PythonAstREPLTool(globals=dataframe_dict)
-    llm_with_tools = chat_model.bind_tools([code_tool], tool_choice=code_tool.name)
-    parser = JsonOutputKeyToolsParser(key_name=code_tool.name, first_tool_only=True)
-
-    # print(dataframe_description)
-
-    for attempt in range(3):
-        # analyser_prompt = PromptTemplate(template = analyse_data_prompt_template,
-        #                                                        input_variables = ['question']).partial(
-        #     markdown= df_head, columns = df_columns, dataframe_description = dataframe_description
-        # )
-
-        analyser_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", analyse_data_system_prompt),
-                MessagesPlaceholder(variable_name="messages")
-            ]
-        ).partial(
-            markdown=df_head, columns=df_columns, dataframe_description=dataframe_description
-        )
-
-        chain = analyser_prompt | llm_with_tools | parser  # | code_tool
-        # generated_code = chain.invoke({"question": state["messages"][-1]})
-        generated_code = chain.invoke(state)
-        print("*****************************")
-        print(generated_code)
-        # print("*****************************")
-        response = code_tool.invoke(generated_code)
-        # print("*****************************")
-        # print(response)
-        # print("*****************************")
-        if 'Error' not in response:
-            state["intermediate_steps"] = state["intermediate_steps"] + [AIMessage(content=generated_code["query"])]
-            break
-        # print("====== Error Occured ======")
-        generated_code = generated_code["query"].replace("{", "{{").replace("}", "}}")
-        analyse_data_system_prompt = analyse_data_system_prompt + f"""
-        \n\n below is your code: \n {str(generated_code)}
-        \n\n Error occured, look at the error details provided below and make correction in code: \n {str(response)}
-        """
-        # print(analyse_data_system_prompt)
-        # analyse_data_system_prompt = analyse_data_system_prompt + f"""
-        # \n\n Error occured, look at the error details provided below and make correction in code: \n {str(response)}
-        # """
-    return {"messages": [AIMessage(content=response)]}
-
-def analyse_upcoming_transaction_data(state):
     dataframe_dict = {}
     dataframe_description = ""
     for i in range(len(state["dataframe_store"])):
@@ -1043,6 +944,8 @@ You are a supervisor tasked with managing a conversation between the
 following workers:  {members}. Given the following user request,
 respond with the worker to act next.
 
+Use analyse_upcoming_transaction_data when question asks for upcoming transactions etc. 
+
 Use monthly_recap agent when question asks for Oct month summary/overview etc. If it's any other month then Current month/Oct then don't return this flow & move on to next
 Use transaction_data_analyst agent when question needs an analysis on user's past transaction data
 Use Research agent when questions require seearching a web to get finacial information and any general purpose query
@@ -1178,8 +1081,7 @@ workflow = StateGraph(AgentState)
 workflow.add_node("supervisor", supervisor_chain)
 
 workflow.add_node("filter_generator", txn_data_fetcher.respond)
-workflow.add_node("fetch_data", invoke_get_txn_data_tool)
-workflow.add_node("fetch_data", invoke_get_upcoming_txn_data_tool)
+workflow.add_node("analyse_upcoming_transaction_data", get_upcoming_txn_data_tool)
 workflow.add_node("analyse_transaction_data", analyse_transaction_data)
 workflow.add_node("ask_human", human_in_loop)
 workflow.add_node("monthly_recap", get_monthly_recap)
@@ -1207,7 +1109,7 @@ workflow.add_edge("Researcher", "supervisor")
 workflow.add_edge("jupiter_info", "supervisor")
 workflow.add_edge("analyse_transaction_data", "supervisor")
 workflow.add_edge("monthly_recap", END)
-workflow.add_edge("analyse_upcoming_transaction_data", "supervisor")
+workflow.add_edge("analyse_upcoming_transaction_data", END)
 
 # import sqlite3
 # from langgraph.checkpoint.sqlite import SqliteSaver
