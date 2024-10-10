@@ -21,15 +21,15 @@ def get_db_connection():
         logging.error(e)
         return None
 
-def execute_query(query):
+def execute_query(query, params=None):
     try:
         conn = get_db_connection()
         if conn is None:
             raise ValueError("Failed to connect to the database")
         cursor = conn.cursor()
-        cursor.execute(query)
+        cursor.execute(query, params)
         return (conn, cursor)
     except Exception as e:
-        logging.error(f"Error executing query: {query}")
+        logging.error(f"Error executing query: {query} with params: {params}")
         logging.error(e)
         return (None, None)

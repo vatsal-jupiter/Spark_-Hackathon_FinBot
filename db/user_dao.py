@@ -5,6 +5,7 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
+
 def get_user_sessions(user_id):
     query = f"SELECT * FROM user_chat_sessions WHERE user_id='{user_id}';"
     conn, cursor = execute_query(query)
@@ -15,6 +16,7 @@ def get_user_sessions(user_id):
     cursor.close()
     return response
 
+
 def get_user_sessions_with_limit(user_id, limit):
     query = f"SELECT * FROM user_chat_sessions WHERE user_id='{user_id}' ORDER BY start_time desc LIMIT {limit};"
     conn, cursor = execute_query(query)
@@ -24,6 +26,7 @@ def get_user_sessions_with_limit(user_id, limit):
     response = cursor.fetchall()
     cursor.close()
     return response
+
 
 def get_user_history(user_id, session_id, timestamp_start, timestamp_end):
     query = f"SELECT * FROM user_chat_messages WHERE user_id='{user_id}' AND session_id='{session_id}'"
@@ -39,15 +42,21 @@ def get_user_history(user_id, session_id, timestamp_start, timestamp_end):
     cursor.close()
     return response
 
+
 def register_message(user_id, session_id, message, type='text', images=[]):
     message_id = uuid.uuid4()
     images_str = ','.join(images)
     create_session_if_not_exists(user_id, session_id, message)
-    query = (f"INSERT INTO user_chat_messages (user_id, session_id, message_id, message, type, images) "
-             f"VALUES ('{user_id}', '{session_id}', '{message_id}', '{message}', '{type}', '{images_str}')")
-    conn, cursor = execute_query(query)
-    conn.commit()
-    cursor.close()
+    query = ("INSERT INTO user_chat_messages (user_id, session_id, message_id, message, type, images) "
+             "VALUES (%s, %s, %s, %s, %s, %s)")
+    params = (user_id, session_id, message_id, message, type, images_str)
+    conn, cursor = execute_query(query, params)
+    if conn is not None:
+        conn.commit()
+        cursor.close()
+    else:
+        logging.error("Failed to execute query")
+
 
 def create_session_if_not_exists(user_id, session_id, title='Title'):
     try:
