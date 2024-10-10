@@ -8,6 +8,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import os
 
+from services.mcs import get_upcoming_transactions
 from services.wt import get_transactions
 
 # In[2]:
@@ -492,6 +493,20 @@ def get_txn_data_tool(filters: TransactionData, user_id: str):
     return df
 
 
+def get_upcoming_txn_data_tool(state):
+    """
+    Get the upcoming transaction data for user with the provided filters
+    """
+    # hardcoding the filters for upcoming transactions
+    user_id = state["user_id"]
+    filters = TransactionData()
+    df = pd.DataFrame(get_upcoming_transactions(user_id, filters.__dict__))
+    # print('user-transactions', df.to_dict())
+    df = data_preprocessing(df)
+    # Return the result as a JSON object
+
+    return {"dataframe_store": [df]}
+
 # In[23]:
 
 
@@ -892,7 +907,7 @@ def not_supported_question(state):
     return {"messages": [AIMessage(content="This is a financial bot. This query doesn't seems to be related to financial information hence can't help with this.")]}
 
 # members = ["transaction_data_analyst" , "Researcher", "Coder"]
-members = ["not_supported", "monthly_recap", "transaction_data_analyst", "Researcher", "jupiter_info"]
+members = ["analyse_upcoming_transaction_data", "not_supported", "monthly_recap", "transaction_data_analyst", "Researcher", "jupiter_info"]
 options = ["FINISH"] + members
 
 # In[44]:
@@ -932,6 +947,7 @@ You are a supervisor tasked with managing a conversation between the
 following workers:  {members}. Given the following user request,
 respond with the worker to act next.
 
+Use analyse_upcoming_transaction_data when the question asks for upcoming transactions, future transactions, or transactions that are expected to occur in the future 
 Use monthly_recap agent when question asks for Oct month summary/overview etc. If it's any other month then Current month/Oct then don't return this flow & move on to next
 Use transaction_data_analyst agent when question needs an analysis on user's past transaction data
 Use Research agent when questions require seearching a web to get generic financial information 
@@ -1069,6 +1085,7 @@ workflow.add_node("supervisor", supervisor_chain)
 
 workflow.add_node("filter_generator", txn_data_fetcher.respond)
 workflow.add_node("fetch_data", invoke_get_txn_data_tool)
+workflow.add_node("analyse_upcoming_transaction_data", get_upcoming_txn_data_tool)
 workflow.add_node("analyse_transaction_data", analyse_transaction_data)
 workflow.add_node("ask_human", human_in_loop)
 workflow.add_node("monthly_recap", get_monthly_recap)
@@ -1098,7 +1115,7 @@ workflow.add_edge("jupiter_info", "supervisor")
 workflow.add_edge("analyse_transaction_data", "supervisor")
 workflow.add_edge("monthly_recap", END)
 workflow.add_edge("not_supported", END)
-
+workflow.add_edge("analyse_upcoming_transaction_data", END)
 
 # import sqlite3
 # from langgraph.checkpoint.sqlite import SqliteSaver
