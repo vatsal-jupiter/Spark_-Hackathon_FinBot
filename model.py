@@ -886,7 +886,7 @@ jupiter_info_node = functools.partial(agent_node, agent=jupiter_info_agent, name
 
 # In[43]:
 def get_monthly_recap(state):
-    return {"messages": [AIMessage(content="https://app.jupiter.money/money-recap")]}
+    return {"messages": [AIMessage(content="You can access your Money Recap using the following link:\n\n- [Money Recap Dashboard for September](https://app.jupiter.money/money-recap)")]}
 
 # members = ["transaction_data_analyst" , "Researcher", "Coder"]
 members = ["monthly_recap", "transaction_data_analyst", "Researcher", "jupiter_info"]
