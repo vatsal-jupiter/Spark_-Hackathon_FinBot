@@ -885,10 +885,11 @@ jupiter_info_node = functools.partial(agent_node, agent=jupiter_info_agent, name
 # ### Supervior
 
 # In[43]:
-
+def get_monthly_recap(state):
+    return {"messages": [AIMessage(content="https://app.jupiter.money/money-recap")]}
 
 # members = ["transaction_data_analyst" , "Researcher", "Coder"]
-members = ["transaction_data_analyst", "Researcher", "jupiter_info"]
+members = ["monthly_recap", "transaction_data_analyst", "Researcher", "jupiter_info"]
 options = ["FINISH"] + members
 
 # In[44]:
@@ -928,6 +929,7 @@ You are a supervisor tasked with managing a conversation between the
 following workers:  {members}. Given the following user request,
 respond with the worker to act next.
 
+Use monthly_recap agent when question asks for Oct month summary/overview etc. If it's any other month then Current month/Oct then don't return this flow & move on to next
 Use transaction_data_analyst agent when question needs an analysis on user's past transaction data
 Use Research agent when questions require seearching a web to get finacial information and any general purpose query
 Use jupiter_info when question require access to user's personal and account details or need an information about 
@@ -1065,6 +1067,7 @@ workflow.add_node("filter_generator", txn_data_fetcher.respond)
 workflow.add_node("fetch_data", invoke_get_txn_data_tool)
 workflow.add_node("analyse_transaction_data", analyse_transaction_data)
 workflow.add_node("ask_human", human_in_loop)
+workflow.add_node("monthly_recap", get_monthly_recap)
 
 workflow.add_node("Researcher", research_node)
 workflow.add_node("jupiter_info", jupiter_info_node)
@@ -1088,6 +1091,8 @@ workflow.add_edge("fetch_data", "analyse_transaction_data")
 workflow.add_edge("Researcher", "supervisor")
 workflow.add_edge("jupiter_info", "supervisor")
 workflow.add_edge("analyse_transaction_data", "supervisor")
+workflow.add_edge("monthly_recap", END)
+
 
 # import sqlite3
 # from langgraph.checkpoint.sqlite import SqliteSaver
