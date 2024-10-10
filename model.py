@@ -461,7 +461,7 @@ def data_preprocessing(df):
                'category',
                'creditDebitIndicator', 'merchant']
     df = df[col_int]
-    df['transactionDateTime'] = pd.to_datetime(df['transactionDateTime'], format='ISO8601', utc=True)
+    df['transactionDateTime'] = pd.to_datetime(df['transactionDateTime'], format='ISO8601', utc=True).dt.tz_convert('Asia/Kolkata')
     return df
 
 
@@ -475,7 +475,7 @@ from langchain.tools import tool
 
 
 @tool
-def get_txn_data_tool(filters: TransactionData):
+def get_txn_data_tool(filters: TransactionData, user_id: str):
     """
     Get the transaction data for user with the provided filters
     """
@@ -485,10 +485,7 @@ def get_txn_data_tool(filters: TransactionData):
         else:
             filters.coarse_grain_category.remove("investment")
             filters.coarse_grain_category.remove("pots")
-    df = pd.DataFrame(get_transactions('4f7bffe5-7607-4ccb-96b2-bae3372a9d4f', {
-        'startDate': '2024-10-01',
-        'endDate': '2024-10-30',
-    }))
+    df = pd.DataFrame(get_transactions(user_id, filters.__dict__))
     # print('user-transactions', df.to_dict())
     df = data_preprocessing(df)
     # Return the result as a JSON object
@@ -550,7 +547,7 @@ def invoke_get_txn_data_tool(state):
         args = tool_details.get("function").get("arguments")
         print(args)
         dataframe_description = description_generator.invoke({"tool_argumnts": args})
-        action = ToolInvocation(tool=function_name, tool_input={'filters': json.loads(args)})
+        action = ToolInvocation(tool=function_name, tool_input={'filters': json.loads(args), 'user_id': state['user_id']})
         response = tool_executor.invoke(action)
         dataframe_update = {
             "dataframe": response,
@@ -1050,6 +1047,7 @@ class DataSchema(TypedDict):
 
 
 class AgentState(TypedDict):
+    user_id: str
     messages: Annotated[list, add_messages]
     intermediate_steps: Annotated[list, operator.add]
     dataframe_store: List[DataSchema]

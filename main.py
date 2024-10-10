@@ -60,7 +60,7 @@ async def query(request: Request, session_id: str, customer_id: str = Header(Non
     # get response
 
     response = graph.invoke(
-        {"messages": HumanMessage(content=query_text)},
+        {"messages": HumanMessage(content=query_text), 'user_id': customer_id},
         stream_mode="values"
     )
 
