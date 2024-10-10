@@ -904,7 +904,7 @@ def get_monthly_recap(state):
     return {"messages": [AIMessage(content="https://app.jupiter.money/money-recap")]}
 
 # members = ["transaction_data_analyst" , "Researcher", "Coder"]
-members = ["monthly_recap", "transaction_data_analyst", "Researcher", "jupiter_info"]
+members = ["analyse_upcoming_transaction_data", "monthly_recap", "transaction_data_analyst", "Researcher", "jupiter_info"]
 options = ["FINISH"] + members
 
 # In[44]:
