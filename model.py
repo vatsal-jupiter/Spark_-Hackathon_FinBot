@@ -1072,7 +1072,7 @@ workflow.add_node("fetch_data", invoke_get_txn_data_tool)
 workflow.add_node("analyse_transaction_data", analyse_transaction_data)
 workflow.add_node("ask_human", human_in_loop)
 workflow.add_node("monthly_recap", get_monthly_recap)
-workflow.add_node("not_supported", not_supported_question())
+workflow.add_node("not_supported", not_supported_question)
 
 workflow.add_node("Researcher", research_node)
 workflow.add_node("jupiter_info", jupiter_info_node)
