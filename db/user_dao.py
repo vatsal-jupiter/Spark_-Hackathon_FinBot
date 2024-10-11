@@ -44,7 +44,7 @@ def get_user_history(user_id, session_id, timestamp_start, timestamp_end):
 
 
 def register_message(user_id, session_id, message, type='text', images=[]):
-    message_id = uuid.uuid4()
+    message_id = str(uuid.uuid4())
     images_str = ','.join(images)
     create_session_if_not_exists(user_id, session_id, message)
     query = ("INSERT INTO user_chat_messages (user_id, session_id, message_id, message, type, images) "
