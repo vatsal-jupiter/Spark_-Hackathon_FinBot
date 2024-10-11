@@ -1,5 +1,6 @@
 import logging
 import psycopg2
+import os
 from psycopg2 import sql
 
 # Configure logging
@@ -9,11 +10,11 @@ def get_db_connection():
     try:
         # Replace with your actual database connection parameters
         conn = psycopg2.connect(
-            dbname="chatbot",
-            user="lms",
-            password="lms",
-            host="localhost",
-            port="9502"
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_HOST"),
+            port=os.getenv("DB_PORT")
         )
         return conn
     except Exception as e:

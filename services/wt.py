@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import requests
 import os
 from collections import defaultdict
+# from services.ams import get_user_accounts
 
 load_dotenv()
 SHARED_SECRET = os.getenv('SHARED_SECRET')
@@ -30,7 +31,7 @@ def to_wt_filters(filters):
         difference = [item for item in filters['product'] if item not in non_ada]
         if len(difference) > 0:
             products.append('ADA')
-        new_filters['product'] = products
+        new_filters['product'] = ','.join(products)
     if 'transaction_date_range' in filters:
         start_date = filters['transaction_date_range'].start.date()
         end_date = filters['transaction_date_range'].end.date()
@@ -61,6 +62,7 @@ def get_transactions(user_id: str, filters: dict):
     url = f"{WT_URL}/wealth/v1/transactions?pageNumber={page_number}"
     print(wt_filters)
     response = requests.request("POST", url, headers=headers, data=json.dumps(wt_filters))
+    print('resp', response.content)
     data = response.json()
     transactions.extend(data["transactions"])
     while data["pagination"]["totalRecords"] > len(transactions):
@@ -118,6 +120,11 @@ def get_accounts_summary(user_id, products=None):
     # print(modified_data)
     return modified_data
 
+# def get_user_account_details(user_id, products=None):
+#     return get_user_accounts(user_id)
+
+
+# print(get_user_account_details('08134773-3a20-4525-a6bf-182846dcb93b'))
 
 # print(get_transactions('5ed1417f-bc66-4aeb-8a60-c7564e4964f9', {
 #     'startDate': '2024-10-01',
