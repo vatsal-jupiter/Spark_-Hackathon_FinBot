@@ -13,6 +13,7 @@ from typing_extensions import Annotated
 from services.mcs import get_upcoming_transactions
 from services.wt import get_transactions, get_accounts_summary
 
+WT_URL = os.getenv('WT_URL')
 # In[2]:
 
 
@@ -983,7 +984,7 @@ def get_spend_insights_for_user(user_id, current_month,past_month):
     #1. get all data needed
 
     #1a: get or set API query params and call API
-    url_aggregate="http://localhost:9000/wealth/v1/insights/aggregate"
+    url_aggregate=f"{WT_URL}/wealth/v1/insights/aggregate"
     payload_dict = update_payload(current_month)
     payload_aggregate = json.dumps(payload_dict["payload_aggregate"])
     headers_aggregate = {
@@ -1206,49 +1207,15 @@ def get_savings_strategies(state):
     return {"reasoning":reasoning, "current_index": -1}
 
 
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[57]:
-
-
-festival_df = pd.read_csv('festivals.csv')
-festival_df['Date'] = pd.to_datetime(festival_df['Date'] + ' 2024', format='%B %d %Y')
-festival_df = festival_df.drop_duplicates(subset='Date', keep='last')
-
-
-# In[58]:
-
-
-festival_df = pd.read_csv('festivals.csv')
-festival_df['Date'] = pd.to_datetime(festival_df['Date'] + ' 2024', format='%B %d %Y')
-festival_df = festival_df.drop_duplicates(subset='Date', keep='last')
-
-
-# In[59]:
-
-
-salary_date = pd.DataFrame(pd.read_csv('./heckathon_cust_txns_37.csv')['user_id'].unique())
-salary_date.columns = ['user_id']
-salary_date['salary_day'] = 30
-salary_date.head()
-
-
 # In[60]:
 
 
 from datetime import timedelta
 
 def tag_festival_day(transaction_date):
+    festival_df = pd.read_csv('festivals.csv')
+    festival_df['Date'] = pd.to_datetime(festival_df['Date'] + ' 2024', format='%B %d %Y')
+    festival_df = festival_df.drop_duplicates(subset='Date', keep='last')
     # Iterate through the global festival_df
     for _, row in festival_df.iterrows():
         festival_day = row['Date']
@@ -1293,9 +1260,10 @@ def get_salary_date(row):
 
     return salary_date
 
-def tag_pay_day(df):
+def tag_pay_day(df ,user_id):
     # Merge the two dataframes on user_id
     #df = pd.merge(df, salary_date, on='user_id', how='left')
+    salary_date = pd.DataFrame([[user_id,30]], columns = ["user_id", "salary_day"])
     df = pd.merge(df, salary_date, on='user_id', how='inner')
 
     # Apply the function to create the salary date
@@ -1420,6 +1388,9 @@ def generate_time_periods_from_csv(time_splits_df):
 def filter_data(df, user_id, category):
     con1 = df['jupiter_coarsegrain_category'].str.lower() == category.lower()
     con2 = df['user_id'] == user_id
+    col_intr = ['user_id', 'transactiondatetime', 'transactionamount',
+       'jupiter_coarsegrain_category']
+    df = df[col_intr]
     return df[con1&con2]
 
 def get_data_cuts_for_category(category, current_month, user_id):
@@ -1446,19 +1417,24 @@ def get_data_cuts_for_category(category, current_month, user_id):
     from dateutil.relativedelta import relativedelta
 
     current_month_date = datetime.strptime(current_month, "%Y-%m")
-    start_month_date = current_month_date - relativedelta(months=1)
-    start_month = start_month_date.strftime("%Y-%m")
-    end_month_date = current_month_date - relativedelta(months=7)
-    end_month = end_month_date.strftime("%Y-%m")
-    print("----- data cuts months---->", current_month, start_month, end_month)
+    first_of_current_month = current_month_date.replace(day=1)
+    last_of_current_month = (current_month_date + relativedelta(months=1, days=-1)).date()
+    current_month_range = DateRange(start=first_of_current_month, end=last_of_current_month)
 
-    # prv_all_user_data = pd.read_csv('prv37_txn_data_pfm.csv')
-    # aug_all_user_data = pd.read_csv('prv88_txn_data_pfm.csv')
-    prv_all_user_data = pd.read_csv('./heckathon_cust_txns_37.csv')
-    print("loaded heckathon_cust_txns_37.csv")
-    aug_all_user_data = pd.read_csv('./heckathon_cust_txns_88.csv')
-    print("loaded heckathon_cust_txns_88.csv")
-    #prv_all_user_data.shape, aug_all_user_data.shape
+    start_month_date = current_month_date - relativedelta(months=1)
+    start_of_start_month = start_month_date.replace(day=1)
+    end_month_date = current_month_date - relativedelta(months=7)
+    end_of_end_month = (end_month_date + relativedelta(months=1, days=-1)).replace(hour=23, minute=59, second=59)
+
+    start_end_month_range = DateRange(start=start_of_start_month, end=end_of_end_month)
+    print("----- data cuts months---->", current_month, current_month_range, start_end_month_range)
+
+    prv_all_user_data = pd.DataFrame(get_transactions(user_id, {
+        'transaction_date_range': current_month_range
+    }))
+    aug_all_user_data = pd.DataFrame(get_transactions(user_id, {
+        'transaction_date_range': start_end_month_range
+    }))
     print(prv_all_user_data.shape)
     print("user-id",user_id)
     aug_user_data = filter_data(aug_all_user_data, user_id, category)
