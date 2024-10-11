@@ -1,0 +1,8 @@
+start_time,end_time,name,description
+06:00:00,09:00:00,Morning Grocery Runs,"Quick morning grocery trips for essentials, typically before work or school."
+09:00:00,12:00:00,Late Morning Grocery Shopping,"Mid-morning grocery shopping during free time, often before lunch prep."
+12:00:00,15:00:00,Lunchtime Grocery Shopping,"Grocery shopping during lunch breaks, common in urban areas."
+15:00:00,18:00:00,Afternoon Grocery Shopping,"Afternoon shopping for groceries, often leisurely or for daily needs."
+18:00:00,21:00:00,Evening Grocery Rush,Peak grocery hours as people return from work and stock up for dinner or the next day.
+21:00:00,23:00:00,Late-Night Grocery Shopping,"Late-night grocery shopping, often for essentials or next-day prep."
+23:00:00,02:00:00,Overnight Convenience Store Runs,24/7 convenience stores see traffic from late-night shoppers or last-minute needs.

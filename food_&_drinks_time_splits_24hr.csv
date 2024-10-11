@@ -1,0 +1,7 @@
+start_time,end_time,name,description
+06:00:00,09:00:00,Breakfast Time,"Morning meal, the first meal of the day."
+09:00:00,11:00:00,Mid-Morning Snack Time,A light snack or drink to sustain energy mid-morning.
+12:00:00,14:00:00,Lunch Time,"Main meal of the day, often around midday."
+15:00:00,17:00:00,Afternoon Snack Time,"A light snack, tea, or coffee break in the afternoon."
+18:00:00,20:00:00,Dinner Time,"Evening meal, usually the final meal of the day."
+21:00:00,23:00:00,Late-Night Snack Time,"Light snack or drink before bed, sometimes optional."

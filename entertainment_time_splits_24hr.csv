@@ -1,0 +1,9 @@
+start_time,end_time,name,description
+06:00:00,09:00:00,Early Morning Relaxation,Some people may watch short shows or play casual mobile games to start the day.
+09:00:00,12:00:00,Late Morning Entertainment,"Light entertainment—listening to podcasts, watching videos, or casual gaming during breaks."
+12:00:00,14:00:00,Lunchtime Break Entertainment,Quick entertainment during lunch breaks—an episode of a show or mobile games.
+14:00:00,17:00:00,Afternoon Escapism,"Watching movies, gaming, or browsing streaming platforms during free afternoons."
+17:00:00,20:00:00,Evening Prime Time Entertainment,"Prime time for TV shows, movies, or gaming after work hours."
+20:00:00,23:00:00,Late Evening Entertainment,"Watching full-length movies, binge-watching series, or longer gaming sessions."
+23:00:00,02:00:00,Late-Night Gaming or Streaming,"Late-night movie marathons, streaming, or gaming sessions before bed."
+02:00:00,06:00:00,Overnight Chill,"Niche but growing segment for late-night gamers, binge-watchers, or streamers."

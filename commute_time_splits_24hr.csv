@@ -1,0 +1,10 @@
+start_time,end_time,name,description
+05:00:00,07:00:00,Early Morning Commute,"Used by early risers, shift workers, or those catching flights or trains."
+07:00:00,10:00:00,Morning Rush Hour Commute,"Peak commute time for office workers, school-goers, and daily travelers."
+10:00:00,12:00:00,Late Morning/Early Afternoon Errands,"People run errands, attend meetings, or make shorter trips during these hours."
+12:00:00,14:00:00,Lunchtime Commute,"Some commuters may use cabs or autos for lunch meetings, shopping, or short trips."
+14:00:00,17:00:00,Afternoon Commute/Errands,"Light traffic as people return from meetings or errands, demand picks up for intra-city travel."
+17:00:00,20:00:00,Evening Rush Hour Commute,"The second peak of the day, where people are returning from work or school."
+20:00:00,23:00:00,Late Evening/Leisure Commute,"Travel for social activities, dinners, or entertainment, with lighter traffic."
+23:00:00,02:00:00,Nighttime Commute,"Night shift workers or late-night event attendees, lower traffic but some demand."
+02:00:00,05:00:00,Overnight Commute,"Late-night travelers, emergency trips, or early shift workers use services."
