@@ -58,10 +58,26 @@ load_dotenv()
 os.environ["AZURE_OPENAI_API_KEY"] = "991aaf91f70042f79584ae6a32330c3d"
 os.environ["AZURE_OPENAI_ENDPOINT"] = "https://ds-genai-gpt4o-hackathon.openai.azure.com/"
 
+end_point = "https://Meta-Llama-3-1-405B-ds-jupiter.eastus2.models.ai.azure.com/v1/chat/completions"
+api_key = "had1kdX8avzidelf04sAr4pVYIgybOcG"
+
+from langchain_community.chat_models.azureml_endpoint import (
+    AzureMLEndpointApiType,
+    CustomOpenAIChatContentFormatter,
+)
+
+from langchain_community.chat_models.azureml_endpoint import AzureMLChatOnlineEndpoint
+meta_chat_model = AzureMLChatOnlineEndpoint(
+    endpoint_url=end_point,
+    endpoint_api_type=AzureMLEndpointApiType.serverless,
+    endpoint_api_key=api_key,
+    content_formatter=CustomOpenAIChatContentFormatter(),
+)
+
 from langchain_openai import AzureChatOpenAI
 
 chat_model = AzureChatOpenAI(
-    azure_deployment="gpt-4o-mini",  # or your deployment
+    azure_deployment="gpt-4o-mini-2",  # or your deployment
     api_version="2023-03-15-preview",  # or your api version
     temperature=0,
     max_tokens=None,
@@ -527,7 +543,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 description_generation_template = """
-I am uisng one tool with my AI agent. Below is the argument schema of the function:
+I am using one tool with my AI agent. Below is the argument schema of the function:
 {argument_schema}
 
 This tool will return dataframe of transaction data but it will apply filter based on arguments
@@ -810,6 +826,7 @@ system_prompt = """
 You are a general purpose agent to search financial data and give financial advice.
 search the web if required to answer users query.
 use the code tool if you need to execute code and for data plotting using matplotlib.
+As part of response, Don't include your introduction. Be specific & crisp.
 """
 
 # In[36]:
@@ -957,6 +974,7 @@ prompt = ChatPromptTemplate.from_messages(
 ).partial(options=str(options), members=", ".join(members))
 
 route_openai_function_schema = convert_to_openai_function(route)
+
 
 # here we need to use bind_functions because JsonOutputFunctionsParser will fetch 'function_call' from additional_kwargs.
 # if we use bind_tools then we will get 'tool_calls' in additional_kwargs.
