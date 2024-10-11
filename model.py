@@ -1176,7 +1176,7 @@ maximize_savings_chain = categoey_reasoning_prompt_template | chat_model | categ
 # In[55]:
 
 
-user_id = "01c503a7-17bf-42d2-9705-26e6e84c2c9a"
+#user_id = "01c503a7-17bf-42d2-9705-26e6e84c2c9a"
 # previous_month = "2024-07"
 # current_month = "2024-08"
 
@@ -1200,7 +1200,7 @@ def get_savings_strategies(state):
     previous_month = previous_month_date.strftime("%Y-%m")
     #print("----- month ---->",current_month, previous_month)
 
-    markdown = get_spend_insights_for_user(user_id, current_month, previous_month)
+    markdown = get_spend_insights_for_user(state["user_id"], current_month, previous_month)
     out = maximize_savings_chain.invoke({"markdown":markdown})
     reasoning = out.dict()['reasoning']
     return {"reasoning":reasoning, "current_index": -1}
@@ -1422,7 +1422,7 @@ def filter_data(df, user_id, category):
     con2 = df['user_id'] == user_id
     return df[con1&con2]
 
-def get_data_cuts_for_category(category, current_month):
+def get_data_cuts_for_category(category, current_month, user_id):
     # category = state['current_category']
 
     tags_groupings_sum = [
@@ -1460,10 +1460,10 @@ def get_data_cuts_for_category(category, current_month):
     print("loaded heckathon_cust_txns_88.csv")
     #prv_all_user_data.shape, aug_all_user_data.shape
     print(prv_all_user_data.shape)
-
-    aug_user_data = filter_data(aug_all_user_data, '5453f139-66ef-477c-84c5-191bca9a663d', category)
+    print("user-id",user_id)
+    aug_user_data = filter_data(aug_all_user_data, user_id, category)
     print(aug_user_data.shape)
-    prv_user_data = filter_data(prv_all_user_data, '5453f139-66ef-477c-84c5-191bca9a663d', category)
+    prv_user_data = filter_data(prv_all_user_data, user_id, category)
     aug_user_data = assign_tags(aug_user_data)
     prv_user_data = assign_tags(prv_user_data)
 
@@ -1681,7 +1681,7 @@ def process_category(state):
         return {"strategy":[]}
     # state["current_category"] = current_category
     current_month = state["current_month"]
-    markdown, special_time_period_description = get_data_cuts_for_category(current_category, current_month)
+    markdown, special_time_period_description = get_data_cuts_for_category(current_category, current_month, state["user_id"])
     if markdown == "":
         return {"strategy":[]}
     #print(markdown)
