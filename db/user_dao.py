@@ -72,3 +72,13 @@ def create_session_if_not_exists(user_id, session_id, title='Title'):
         conn.close()
     except Exception as e:
         logging.error(f'Already exists for user {user_id}: {e}')
+
+def customer_tier_info(customer_id):
+    query = f"SELECT * FROM customer_tiers WHERE customer_id='{customer_id}'"
+    conn, cursor = execute_query(query)
+    if cursor is None:
+        logging.error("Failed to execute query")
+        raise ValueError("Failed to execute query")
+    response = cursor.fetchall()
+    cursor.close()
+    return response
