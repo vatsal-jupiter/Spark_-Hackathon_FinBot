@@ -42,15 +42,6 @@ def get_user_history(user_id, session_id, timestamp_start, timestamp_end):
     cursor.close()
     return response
 
-def customer_tier_info(customer_id):
-    query = f"SELECT * FROM customer_tiers WHERE customer_id='{customer_id}'"
-    conn, cursor = execute_query(query)
-    if cursor is None:
-        logging.error("Failed to execute query")
-        raise ValueError("Failed to execute query")
-    response = cursor.fetchall()
-    cursor.close()
-    return response
 
 def register_message(user_id, session_id, message, type='text', images=[]):
     message_id = str(uuid.uuid4())

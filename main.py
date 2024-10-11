@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from typing import Annotated
-from db.user_dao import get_user_history, get_user_sessions_with_limit, register_message, customer_tier_info
+from db.user_dao import get_user_history, get_user_sessions_with_limit, register_message
 from model import graph
 
 app = FastAPI()
@@ -59,12 +59,15 @@ async def query(request: Request, session_id: str, customer_id: str = Header(Non
 
     # get response
 
-    response = "response from the model"
+    response = graph.invoke(
+        {"messages": HumanMessage(content=query_text), 'user_id': customer_id},
+        stream_mode="values"
+    )
 
     register_message(customer_id, session_id, response, type='response') # saved response in db
 
     # Simulated response, replace with actual query processing logic
-    return {"customer_id": customer_id, "response": response}
+    return {"customer_id": customer_id, "response": response["messages"][-1].content}
 
 
 class ChatHistoryModel(BaseModel):
@@ -153,37 +156,3 @@ async def get_chat_data(session_id: str, timestamp_start: Optional[str] = None, 
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-class CustomerTierModel(BaseModel):
-    customer_id: str
-    tier: str
-    coarse_grain_tier: str
-    valid_till: str
-
-
-
-# define an api /get to get the customer tier details
-@app.get("/customer_tier")
-async def get_customer_tier(customer_id: str = Header(None)):
-    try:
-        customer_tiers = customer_tier_info(customer_id)
-
-        if not customer_tiers:
-            raise HTTPException(status_code=404, detail="No tier found for this customer")
-
-        customer_tier = [
-                CustomerTierModel(
-                    customer_id=customer_tier[0],
-                    tier=customer_tier[1],
-                    coarse_grain_tier=customer_tier[2],
-                    valid_till=customer_tier[3].strftime("%Y-%m-%d %H:%M:%S") if customer_tier[3] else datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                )
-                for customer_tier in customer_tiers
-        ]
-
-        return {"customer_tier": customer_tier}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
