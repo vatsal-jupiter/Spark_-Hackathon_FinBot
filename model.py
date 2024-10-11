@@ -986,7 +986,7 @@ def get_spend_insights_for_user(user_id, current_month,past_month):
     #1. get all data needed
 
     #1a: get or set API query params and call API
-    url_aggregate="http://localhost:9003/wealth/v1/insights/aggregate"
+    url_aggregate="http://localhost:9000/wealth/v1/insights/aggregate"
     payload_dict = update_payload(current_month)
     payload_aggregate = json.dumps(payload_dict["payload_aggregate"])
     headers_aggregate = {
@@ -1039,7 +1039,7 @@ from typing import List, Literal, Optional, Tuple
 from langchain.output_parsers import PydanticOutputParser
 
 class WealthTabMonth(BaseModel):
-    current_month: str = Field(regex=r"^\d{4}-\d{2}$",
+    current_month: str = Field(pattern=r"^\d{4}-\d{2}$",
                                description="Current month in 'YYYY-MM' format, e.g., '2024-08'"
                                )
 
@@ -1240,7 +1240,7 @@ festival_df = festival_df.drop_duplicates(subset='Date', keep='last')
 # In[59]:
 
 
-salary_date = pd.DataFrame(pd.read_csv('heckathon_cust_txns_37.csv')['user_id'].unique())
+salary_date = pd.DataFrame(pd.read_csv('./heckathon_cust_txns_37.csv')['user_id'].unique())
 salary_date.columns = ['user_id']
 salary_date['salary_day'] = 30
 salary_date.head()
@@ -1380,7 +1380,8 @@ def assign_tags(df):
     df['day_of_week'] = df['day_of_week'].str.lower()
     df['day_type'] = df['transactiondatetime'].dt.weekday.apply(lambda x: "weekend" if x >= 5 else "working day")
     #df['time_period'] = df['transactiondatetime'].apply(classify_time_of_day)
-
+    print("df.sahpe",df.shape)
+    print("df.markdown",df.head().to_markdown())
     df = tag_pay_day(df)
     df['is_festival_day'] = df['transactiondatetime'].apply(tag_festival_day)
 
@@ -1456,13 +1457,16 @@ def get_data_cuts_for_category(category, current_month):
 
     # prv_all_user_data = pd.read_csv('prv37_txn_data_pfm.csv')
     # aug_all_user_data = pd.read_csv('prv88_txn_data_pfm.csv')
-    prv_all_user_data = pd.read_csv('heckathon_cust_txns_37.csv')
-    aug_all_user_data = pd.read_csv('heckathon_cust_txns_88.csv')
+    prv_all_user_data = pd.read_csv('./heckathon_cust_txns_37.csv')
+    print("loaded heckathon_cust_txns_37.csv")
+    aug_all_user_data = pd.read_csv('./heckathon_cust_txns_88.csv')
+    print("loaded heckathon_cust_txns_88.csv")
     #prv_all_user_data.shape, aug_all_user_data.shape
+    print(prv_all_user_data.shape)
 
-
-    aug_user_data = filter_data(aug_all_user_data, user_id, category)
-    prv_user_data = filter_data(prv_all_user_data, user_id, category)
+    aug_user_data = filter_data(aug_all_user_data, '5453f139-66ef-477c-84c5-191bca9a663d', category)
+    print(aug_user_data.shape)
+    prv_user_data = filter_data(prv_all_user_data, '5453f139-66ef-477c-84c5-191bca9a663d', category)
     aug_user_data = assign_tags(aug_user_data)
     prv_user_data = assign_tags(prv_user_data)
 
