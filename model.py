@@ -378,27 +378,23 @@ txn_data_fetcher_system_prompt = """
 You are expert finncial advisor working for jupiter (1-app for everything money). Below is the decription about jupiter's product.
 Edge Rupay card: It's a Credit Card launched by jupiter in partnership with CSB Bank and RuPay network.
 Edge VISA card: It's a Credit Card launched by jupiter in partnership with Federal Bank and VISA network.
-
-
-You are an agent designed to filter and get the transaction data based on specific criteria. Your role is to assist in processing 
-financial transactions by applying filters such as transaction channels, product types, credit or debit indicators, 
+Pots: Pots is an jupiter's product designed for investment purpose for users. Pots and Investments categories are pertaining to investment transactions of the user.
+You are an agent designed to filter and get the transaction data based on specific criteria. Your role is to assist in processing
+financial transactions by applying filters such as transaction channels, product types, credit or debit indicators,
 coarse-grain categories, transaction amount ranges, and transaction date ranges.
-
 Filtering Criteria:
 Transaction Channel: One or more of the available channels such as 'MANDATE', 'RTGS', 'NEFT', etc.
-Product: Specific product types such as 'JUPITER', 'HDFC Bank', 'ICICI Bank', 'Edge Rupay card', etc.
+Product: Specific product types such as 'JUPITER', 'HDFC Bank', 'ICICI Bank', 'Edge Rupay card', etc. 'JUPITER' indicates transactions happening jupiter's saving account.
 Credit/Debit Indicator: Whether the transaction is a 'DEBIT' or 'CREDIT'.
 Coarse-Grain Category: Transaction categories like 'food & drinks', 'groceries', 'rent', etc.
 Transaction Amount Range: Filter transactions by specifying a minimum and/or maximum amount. If not provided, consider all transaction amounts.
 Transaction Date Range: Filter transactions based on a specific date and time range, with minute-level precision. If the date range is not provided, default is today's transactions
-
-
 Alternative terms you may find in question:
 spend : Credit/Debit Indicator -> DEBIT
 external banks: exclude JUPITER, Edge Rupay card, Edge VISA card from Product
 non jupiter: exclude JUPITER, Edge Rupay card, Edge VISA card from Product
-
-keep this information in mind, think step by step on users question and Invoke the {function_name} with complete accuracy in applying the necessary 
+exclude cards: exclude Edge Rupay card, Edge VISA card from Product
+keep this information in mind, think step by step on users question and Invoke the {function_name} with complete accuracy in applying the necessary
 filters as arguments to the function.
 This is a current time, use it if require: {time}
 """
@@ -721,15 +717,16 @@ def analyse_transaction_data(state):
         dataframe_description = dataframe_description + prompt
 
     analyse_data_system_prompt = """
+    You are expert in writing code, you are working for jupiter (1-app for everything money). Below is the decription about jupiter's product.
+    Edge Rupay card: It's a Credit Card launched by jupiter in partnership with CSB Bank and RuPay network.
+    Edge VISA card: It's a Credit Card launched by jupiter in partnership with Federal Bank and VISA network.
+    Pots: Pots is an jupiter's product designed for investment purpose for users. Pots and Investments categories are pertaining to investment transactions of the user.
     You have access to a pandas dataframes. Below is the head of the dataframes in markdown format:
     {markdown}
-
     below are the set of columns availables:
     {columns}
-
     Description about data of each dataframe availabe:
     {dataframe_description}
-
     Given a user question, write the Python code to answer it. \
     Return ONLY the valid Python code and nothing else. \
     Don't assume you have access to any libraries other than built-in Python ones and pandas.
@@ -986,7 +983,7 @@ def get_spend_insights_for_user(user_id, current_month,past_month):
     #1. get all data needed
 
     #1a: get or set API query params and call API
-    url_aggregate="http://localhost:9003/wealth/v1/insights/aggregate"
+    url_aggregate="http://localhost:9000/wealth/v1/insights/aggregate"
     payload_dict = update_payload(current_month)
     payload_aggregate = json.dumps(payload_dict["payload_aggregate"])
     headers_aggregate = {
@@ -1039,7 +1036,7 @@ from typing import List, Literal, Optional, Tuple
 from langchain.output_parsers import PydanticOutputParser
 
 class WealthTabMonth(BaseModel):
-    current_month: str = Field(regex=r"^\d{4}-\d{2}$",
+    current_month: str = Field(pattern=r"^\d{4}-\d{2}$",
                                description="Current month in 'YYYY-MM' format, e.g., '2024-08'"
                                )
 
@@ -1240,7 +1237,7 @@ festival_df = festival_df.drop_duplicates(subset='Date', keep='last')
 # In[59]:
 
 
-salary_date = pd.DataFrame(pd.read_csv('heckathon_cust_txns_37.csv')['user_id'].unique())
+salary_date = pd.DataFrame(pd.read_csv('./heckathon_cust_txns_37.csv')['user_id'].unique())
 salary_date.columns = ['user_id']
 salary_date['salary_day'] = 30
 salary_date.head()
@@ -1380,7 +1377,8 @@ def assign_tags(df):
     df['day_of_week'] = df['day_of_week'].str.lower()
     df['day_type'] = df['transactiondatetime'].dt.weekday.apply(lambda x: "weekend" if x >= 5 else "working day")
     #df['time_period'] = df['transactiondatetime'].apply(classify_time_of_day)
-
+    print("df.sahpe",df.shape)
+    print("df.markdown",df.head().to_markdown())
     df = tag_pay_day(df)
     df['is_festival_day'] = df['transactiondatetime'].apply(tag_festival_day)
 
@@ -1456,13 +1454,16 @@ def get_data_cuts_for_category(category, current_month):
 
     # prv_all_user_data = pd.read_csv('prv37_txn_data_pfm.csv')
     # aug_all_user_data = pd.read_csv('prv88_txn_data_pfm.csv')
-    prv_all_user_data = pd.read_csv('heckathon_cust_txns_37.csv')
-    aug_all_user_data = pd.read_csv('heckathon_cust_txns_88.csv')
+    prv_all_user_data = pd.read_csv('./heckathon_cust_txns_37.csv')
+    print("loaded heckathon_cust_txns_37.csv")
+    aug_all_user_data = pd.read_csv('./heckathon_cust_txns_88.csv')
+    print("loaded heckathon_cust_txns_88.csv")
     #prv_all_user_data.shape, aug_all_user_data.shape
+    print(prv_all_user_data.shape)
 
-
-    aug_user_data = filter_data(aug_all_user_data, user_id, category)
-    prv_user_data = filter_data(prv_all_user_data, user_id, category)
+    aug_user_data = filter_data(aug_all_user_data, '5453f139-66ef-477c-84c5-191bca9a663d', category)
+    print(aug_user_data.shape)
+    prv_user_data = filter_data(prv_all_user_data, '5453f139-66ef-477c-84c5-191bca9a663d', category)
     aug_user_data = assign_tags(aug_user_data)
     prv_user_data = assign_tags(prv_user_data)
 
