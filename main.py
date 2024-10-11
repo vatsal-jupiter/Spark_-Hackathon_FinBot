@@ -61,7 +61,7 @@ async def query(request: Request, session_id: str, customer_id: str = Header(Non
 
     response = graph.invoke(
         {"messages": HumanMessage(content=query_text), 'user_id': customer_id},
-        stream_mode="values"
+        config={"recursion_limit":50}
     )
 
     register_message(customer_id, session_id, response["messages"][-1].content, type='response') # saved response in db
