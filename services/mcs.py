@@ -20,8 +20,8 @@ def get_upcoming_transactions(user_id: str):
     }
 
     filters = {
-        "startDate": "2024-09-01",
-        "endDate": "2024-09-30",
+        "startDate": "2024-10-01",
+        "endDate": "2024-10-30",
         "recurrenceStatus": [
             "PENDING",
             "DONE"

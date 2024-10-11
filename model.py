@@ -513,6 +513,18 @@ def get_txn_data_tool(filters: TransactionData, user_id: str):
     # Return the result as a JSON object
     return df
 
+def upcomming_txns_preprocessing(df):
+    from datetime import datetime
+    from dateutil.relativedelta import relativedelta
+    current_date = datetime.now()
+    df['dueOn'] = pd.to_datetime(df['dueOn'])
+    df['dueOn'] = df['dueOn'].apply(lambda x: x + relativedelta(months=1) if current_date > x else x)
+    df["dueOn"] = df["dueOn"].astype(str)
+    df = df[["payee","amount","dueOn"]]
+    def format_transaction(row):
+        return f":date: **You have an upcoming payment of ₹{row['amount']} to {row['payee']} on {row['dueOn']}!** :money_with_wings:\nMake sure to mark your calendar.\n"
+    formatted_transactions = '\n'.join(df.apply(format_transaction, axis=1).tolist())
+    return formatted_transactions
 
 def get_upcoming_txn_data_tool(state):
     """
@@ -520,13 +532,12 @@ def get_upcoming_txn_data_tool(state):
     """
     # hardcoding the filters for upcoming transactions
     user_id = state["user_id"]
-    filters = TransactionData()
-    df = pd.DataFrame(get_upcoming_transactions(user_id, filters.__dict__))
+    df = pd.DataFrame(get_upcoming_transactions(user_id))
     # print('user-transactions', df.to_dict())
-    df = data_preprocessing(df)
+    response = upcomming_txns_preprocessing(df)
     # Return the result as a JSON object
 
-    return {"dataframe_store": [df]}
+    return {"messages": [AIMessage(content=response)]}
 
 # In[23]:
 
