@@ -64,7 +64,7 @@ async def query(request: Request, session_id: str, customer_id: str = Header(Non
         stream_mode="values"
     )
 
-    register_message(customer_id, session_id, response, type='response') # saved response in db
+    register_message(customer_id, session_id, response["messages"][-1].content, type='response') # saved response in db
 
     # Simulated response, replace with actual query processing logic
     return {"customer_id": customer_id, "response": response["messages"][-1].content}
