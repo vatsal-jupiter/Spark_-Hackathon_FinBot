@@ -32,6 +32,8 @@ def to_wt_filters(filters):
         if len(difference) > 0:
             products.append('ADA')
         new_filters['product'] = ','.join(products)
+        if 'ALL' in filters['product']:
+            new_filters['product'] = 'ALL'
     if 'transaction_date_range' in filters:
         start_date = filters['transaction_date_range'].start.date()
         end_date = filters['transaction_date_range'].end.date()
@@ -60,15 +62,18 @@ def get_transactions(user_id: str, filters: dict):
     wt_filters = to_wt_filters(filters)
     page_number = 1
     url = f"{WT_URL}/wealth/v1/transactions?pageNumber={page_number}"
-    print(wt_filters)
+    print("wt_filters",wt_filters)
     response = requests.request("POST", url, headers=headers, data=json.dumps(wt_filters))
-    print('resp', response.content)
+
     data = response.json()
     transactions.extend(data["transactions"])
     while data["pagination"]["totalRecords"] > len(transactions):
         page_number+=1
         url = f"{WT_URL}/wealth/v1/transactions?pageNumber={page_number}"
         response = requests.request("POST", url, headers=headers, data=json.dumps(wt_filters))
+        if page_number >= 50:
+            break
+        print(f'resp {page_number}', response.content)
         data = response.json()
         transactions.extend(data["transactions"])
 

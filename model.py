@@ -1268,6 +1268,7 @@ def tag_pay_day(df ,user_id):
 
     # Apply the function to create the salary date
     df['salary_date'] = df.apply(get_salary_date, axis = 1)
+    df['salary_date'] = pd.to_datetime(df['salary_date']).dt.tz_localize('Asia/Kolkata')
 
     # Define the condition for "pay day" (transactions within 7 days after salary date)
     df['pay_day'] = df.apply(
@@ -1316,7 +1317,7 @@ def assign_special_time_period(df, time_splits_df):
 # In[63]:
 
 
-def assign_tags(df):
+def assign_tags(df,user_id):
 
     df['transactiondatetime'] = pd.to_datetime(df['transactiondatetime'])
 
@@ -1347,7 +1348,7 @@ def assign_tags(df):
     #df['time_period'] = df['transactiondatetime'].apply(classify_time_of_day)
     print("df.sahpe",df.shape)
     print("df.markdown",df.head().to_markdown())
-    df = tag_pay_day(df)
+    df = tag_pay_day(df,user_id)
     df['is_festival_day'] = df['transactiondatetime'].apply(tag_festival_day)
 
     return df
@@ -1386,6 +1387,16 @@ def generate_time_periods_from_csv(time_splits_df):
 
 
 def filter_data(df, user_id, category):
+    print("df.columns",df.columns)
+    df['transactionDateTime'] = pd.to_datetime(df['transactionDateTime'], format='ISO8601', utc=True).dt.tz_convert(
+        'Asia/Kolkata')
+    mapping = {
+        'customerID' : 'user_id',
+        'transactionDateTime' : 'transactiondatetime',
+        'transactionAmount' : 'transactionamount',
+        'category': 'jupiter_coarsegrain_category'
+    }
+    df.rename(mapping, axis = 1, inplace = True)
     con1 = df['jupiter_coarsegrain_category'].str.lower() == category.lower()
     con2 = df['user_id'] == user_id
     col_intr = ['user_id', 'transactiondatetime', 'transactionamount',
@@ -1421,27 +1432,29 @@ def get_data_cuts_for_category(category, current_month, user_id):
     last_of_current_month = (current_month_date + relativedelta(months=1, days=-1)).date()
     current_month_range = DateRange(start=first_of_current_month, end=last_of_current_month)
 
-    start_month_date = current_month_date - relativedelta(months=1)
+    start_month_date = current_month_date - relativedelta(months=7)
     start_of_start_month = start_month_date.replace(day=1)
-    end_month_date = current_month_date - relativedelta(months=7)
+    end_month_date = current_month_date - relativedelta(months=1)
     end_of_end_month = (end_month_date + relativedelta(months=1, days=-1)).replace(hour=23, minute=59, second=59)
 
     start_end_month_range = DateRange(start=start_of_start_month, end=end_of_end_month)
-    print("----- data cuts months---->", current_month, current_month_range, start_end_month_range)
+    print("----- data cuts months---->", current_month, start_month_date, end_month_date)
 
     prv_all_user_data = pd.DataFrame(get_transactions(user_id, {
-        'transaction_date_range': current_month_range
+        'transaction_date_range': current_month_range,
+        'product': [ 'ALL' ]
     }))
     aug_all_user_data = pd.DataFrame(get_transactions(user_id, {
-        'transaction_date_range': start_end_month_range
+        'transaction_date_range': start_end_month_range,
+        'product': [ 'ALL' ]
     }))
     print(prv_all_user_data.shape)
     print("user-id",user_id)
     aug_user_data = filter_data(aug_all_user_data, user_id, category)
     print(aug_user_data.shape)
     prv_user_data = filter_data(prv_all_user_data, user_id, category)
-    aug_user_data = assign_tags(aug_user_data)
-    prv_user_data = assign_tags(prv_user_data)
+    aug_user_data = assign_tags(aug_user_data,user_id)
+    prv_user_data = assign_tags(prv_user_data,user_id)
 
     time_splits_df = pd.read_csv(category.replace(" ","_")+"_time_splits_24hr.csv")
     prv_user_data = assign_special_time_period(prv_user_data, time_splits_df)
